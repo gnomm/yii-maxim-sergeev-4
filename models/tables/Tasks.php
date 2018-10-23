@@ -2,6 +2,7 @@
 
 namespace app\models\tables;
 
+use app\events\SentTaskMailEvent;
 use Yii;
 
 /**
@@ -61,11 +62,11 @@ class Tasks extends \yii\db\ActiveRecord
         return $this->hasOne(Users::className(), ['id' => 'user_id']);
     }
 
-    public static function getTaskCurrentMonth($month) {
+    public static function getTaskCurrentMonth($month, $id)
+    {
         return static::find()
-            ->where(["MONTH(date)" => $month])
+            ->where(["MONTH(date)" => $month, "user_id" => $id])//            ->with('user')
             ;
-
 
 //        $tasks = \Yii::$app->db->createCommand("
 //        SELECT * FROM tasks WHERE MONTH(`date`) = MONTH(NOW()) AND YEAR(`date`) = YEAR(NOW())
@@ -73,5 +74,26 @@ class Tasks extends \yii\db\ActiveRecord
 //            ->queryAll();
 //        return $tasks;
     }
+
+    public static function getUsers($id)
+    {
+        return static::find()
+            ->where(['user_id' => $id])
+            ->all();
+    }
+
+//    public function getTaskMail()
+//    {
+//        $event = new SentTaskMailEvent();
+//        $event->sentMassage = 'Привет тыц получил новую задачу';
+//    }
+
+public static function getUserEmail($event) {
+    return static::find()
+        ->where(['user_id' => $event->sender->user_id])
+        ->with('user')
+        ->one();
+}
+
 
 }

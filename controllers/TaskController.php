@@ -8,99 +8,30 @@
 
 namespace app\controllers;
 
+use app\events\SentTaskMailEvent;
+use app\models\ContactForm;
+use Yii;
+use app\behaviors\MyBehaviors;
 use app\models\tables\Task;
 use app\models\tables\Tasks;
 use app\models\tables\Users;
 use app\models\Test;
 use app\models\User;
+use yii\base\Event;
 use yii\data\ActiveDataProvider;
 use yii\debug\models\timeline\DataProvider;
+use yii\swiftmailer\Mailer;
 use yii\web\Controller;
+use yii\helpers\ArrayHelper;
+use yii\web\NotFoundHttpException;
+use yii\filters\VerbFilter;
+use app\validators\MyValidator;
+use yii\validators;
 
 class TaskController extends Controller
 {
     public function actionIndex()
     {
-//        $id = \Yii::$app->request->get('id');
-//        $model = new Test();
-//        $title = $model->title = 'Привет';
-////        var_dump($model->validate());
-////        var_dump($model->getErrors());
-//
-////        $this->layout = false;
-//        return $this->render('index', [
-//            'title' => $title,
-//            'content' => 'dz-1'
-//        ]);
-//
-//        \Yii::$app->db->createCommand("
-//        INSERT INTO task(name_id, task, description, created) VALUES
-//        ('2', 'тест_сентябрь', 'тут будет описание сентября', NOW()),
-//        ('2', 'тест2_сентябрь', 'тут будет описание 2сентября', NOW()),
-//        ('2', 'тест3 сентябрь', 'тут будет описание3 сентября', NOW())
-//        ")->execute();
-//
-//        $resAll = \Yii::$app->db->createCommand("
-//        SELECT * FROM task
-//        ")->queryAll();
-//        var_dump($resAll);
-//
-//        $resOne = \Yii::$app->db->createCommand("
-//        SELECT * FROM task WHERE id = 1
-//        ")->queryOne();
-//        var_dump($resOne);
-//
-//        $id = 2;
-//        $resOne = \Yii::$app->db->createCommand("
-//        SELECT * FROM task WHERE id = :id
-//        ")
-//            ->bindParam(':id', $id)
-//            ->queryOne();
-//        var_dump($resOne);
-//
-        //создание
-//        $user = new Users();
-//        $user->login = 'testLogin';
-//        $user->password = crypt('qwerty');
-//        $user->role_id = 2;
-//        $user->save();
-//
-//
-//
-        //изменение
-        //        $user = Users::findOne(2);
-//        $user->role = 2;
-//        $user->save();
-//        var_dump($user);
-//
-        //чтение
-//        $user = Users::findOne(3);
-//        var_dump($user);
-//
-        //удаление
-//        $user = Users::findOne(2);
-//        $user->delete();
-//        var_dump($user);
-//
-        //вывод роли
-//        $user = Users::getUserWithRole(3);
-//        var_dump($user);
-//
-//
-//        $tasks = Task::find()
-//            ->all();
-//        var_dump(Task::get);
-//
-//
-//
-//
-//
-//
-//
-//        $tasks = \Yii::$app->db->createCommand("
-//        SELECT * FROM task WHERE MONTH(`created`) = MONTH(NOW()) AND YEAR(`created`) = YEAR(NOW())
-//         ")
-//            ->queryAll();
 
 //        $user = new Users();
 //        $user->login = 'qwerty';
@@ -108,20 +39,117 @@ class TaskController extends Controller
 //        $user->role_id = 2;
 //        $user->save();
 
+
         $month = date('n');
+//        $month = 11;
+        $id = 1;
+
         $provider = new ActiveDataProvider([
-            'query' => Tasks::getTaskCurrentMonth($month)
+            'query' => Tasks::getTaskCurrentMonth($month, $id)
         ]);
 
 
+        $users = ArrayHelper::map(Users::find()->all(), 'id', 'login');
+//        var_dump($users);
+
         return $this->render('index', [
-            'provider' => $provider
+            'provider' => $provider,
+            'users' => $users
         ]);
 
     }
 
-    public function actionTask()
+    public function actionView($id)
     {
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
+    }
+
+    protected function findModel($id)
+    {
+        if (($model = tasks::findOne($id)) !== null) {
+            return $model;
+        }
+
+        throw new NotFoundHttpException('The requested page does not exist.');
+    }
+
+
+    public function actionTest()
+    {
+        Event::on(Tasks::class, Tasks::EVENT_AFTER_INSERT, function ($event) {
+
+            $userEmail = Tasks::getUserEmail($event);
+
+            Yii::$app->mailer->compose()
+                ->setTo($userEmail->user->email)
+                ->setFrom(\Yii::$app->params['adminEmail'])
+                ->setSubject($event->sender->name)
+                ->setTextBody($event->sender->description)
+                ->send();
+
+        });
+
+
+        $task = new Tasks();
+        $task->name = 'Test send';
+        $task->description = 'new task';
+        $task->date = '2018-10-21';
+        $task->user_id = 4;
+        $task->save();
+
+        //        $model = new Test;
+//        $model->attachBehavior('my', [
+//            'class' => MyBehaviors::class,
+//            'massage' => 'sdvdsvsdvsdv'
+//        ]);
+//
+//        $model->detachBehavior('my');
+//
+//        $model->title = '321';
+//        $model->bar();
+//        exit;
+//        Event::on(Users::class, Users::EVENT_AFTER_INSERT, function ($event){
+//            $task = new Tasks([
+//                'name' => 'Ознакомиться с проектом',
+//                'description' => 'Описаение задания',
+//                'user_id' => $event->sender->id
+//            ]);
+//            $task->save();
+//        });
+//
+//
+//        $user = new Users();
+//        $user->login = 'ivan';
+//        $user->password = \Yii::$app->security->generatePasswordHash('qwerty');
+//        $user->role_id = 2;
+//        $user->save();
+//
+//
+//        $handler1 = function ($event){
+////            var_dump($event);
+//            echo "первый обродобтчик сработал {$event->massage}";
+//        };
+//        Event::on(Test::class, Test::EVENT_FOO_START, $handler1);
+//        $model = new Test();
+//    //    $model->on(Test::EVENT_FOO_START, $handler1);
+//        $model->foo();
+//
+////        $model->on(Test::EVENT_FOO_END, function (){
+////            echo "второй обродобтчик сработал";
+////        }
+////        );
+////
+////        $model->on(Test::EVENT_FOO_START, [new \stdClass(), 'sxsasss']);
+////
+////        $model->foo();
+////
+////        $model->off(Test::EVENT_FOO_START, $handler1);
+////        $model->foo();
+//
+//        exit;
+
 
     }
 }

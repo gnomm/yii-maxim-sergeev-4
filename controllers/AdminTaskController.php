@@ -26,6 +26,7 @@ class AdminTaskController extends Controller
                 'class' => VerbFilter::className(),
                 'actions' => [
                     'delete' => ['POST'],
+                    'delete' => ['POST'],
                 ],
             ],
         ];
