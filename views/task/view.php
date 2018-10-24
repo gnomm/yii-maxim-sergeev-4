@@ -21,10 +21,13 @@ $this->params['breadcrumbs'][] = $this->title;
             'description:ntext',
             'date',
             'user_id' =>
-            [
-                'label' => 'Name',
-                'value' => $model->user->login
-            ]
+                [
+                    'label' => 'Name',
+                    'value' => $model->user->login
+                ],
+            'created_at',
+            'updated_at'
+
 //            'user_id',
         ],
     ]) ?>

@@ -4,6 +4,8 @@ namespace app\models\tables;
 
 use app\events\SentTaskMailEvent;
 use Yii;
+use yii\behaviors\TimestampBehavior;
+use yii\db\Expression;
 
 /**
  * This is the model class for table "tasks".
@@ -18,6 +20,22 @@ use Yii;
  */
 class Tasks extends \yii\db\ActiveRecord
 {
+
+ public function behaviors()
+ {
+     return [
+         [
+             'class' => TimestampBehavior::className(),
+//             'createdAtAttribute' => 'create_time',
+//             'updatedAtAttribute' => 'update_time',
+             'value' => new Expression('NOW()'),
+         ],
+     ];
+ }
+
+
+
+
     /**
      * {@inheritdoc}
      */

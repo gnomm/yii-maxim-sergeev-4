@@ -25,13 +25,27 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
 
-            'id',
+//        'id',
             'name',
             'description:ntext',
             'date',
-            'user_id',
-
+            'user_id' => [
+                'label' => 'Name',
+                'value' => function ($data) {
+                    return $data->user->login;
+                }
+            ],
             ['class' => 'yii\grid\ActionColumn'],
+
+//            ['class' => 'yii\grid\SerialColumn'],
+//
+//            'id',
+//            'name',
+//            'description:ntext',
+//            'date',
+//            'user_id',
+//
+//            ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
 </div>
